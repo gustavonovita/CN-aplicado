@@ -1,0 +1,40 @@
+def f(H):
+    numerador = (20*H)**(5/3)
+    denomidor = (H + 10)**(2/3)
+    return 0.471405 * (numerador / denomidor) - 5
+
+Hl = 0.5
+Hu = 1.0
+
+print('\nINICIANDO O MÉTODO DA FALSA POSIÇÃO')
+# \n serve para pular uma linha no texto, igual o Enter. 
+
+for k in range(1, 101):
+    
+    #Cálculo da função nos limites para usar a fórmula da falsa posição.
+    f_Hl = f(Hl)
+    f_Hu = f(Hu)
+
+    # Fórmula da falsa posição: 
+    # Hr = (Hl * f(Hu) - Hu * f(Hl)) / (f(Hu) - f(Hl))
+    numerador = (Hl * f_Hu) - (Hu * f_Hl)
+    denominador = (f_Hu - f_Hl)
+    Hr = numerador / denominador
+
+    f_Hr = f(Hr) # Pega o Hr e joga na função f(H)
+
+    print(f"Iteração {k}: Hr = {Hr:.6f}, f(Hr) = {f_Hr:.6f}")
+    # f significa F-string.
+    # {Hr:.6f} o valor de Hr será exibido com 6 casas decimais.
+    # Printa a Iteração, valor de Hr, e função f(Hr)
+
+    if abs(f_Hr) < 1e-6:
+        print(f"RESPOSTA ENCONTRADA: A profundidade é {Hr: .6f} metros")
+        print(f"Número de iterações: {k}")
+        break # O 'break' é o FREIO: ele manda parar a repetição imediatamente!
+
+    # Atualização do intervalo (Igual Bisseção)
+    if f(Hl) * f_Hr < 0:
+        Hu = Hr # Limite superior vira Hr
+    else:
+        Hl = Hr # Limite inferior vira Hr
