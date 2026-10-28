@@ -1,0 +1,47 @@
+# Método de Newton-Raphson:
+
+#Eq. de balanço de energia: 
+# P = h*A*(T - T_amb) + epsilon*sigma*A*(T**4 - T_amb**4)
+
+
+# Parâmetros iniciais:
+P = 20          # Potência fornecida
+h = 10          # Coeficiente de transferência de calor por convecção
+A = 0.01        # Área da superfície de transferência de calor
+T_amb = 300     # Temperatura ambiente
+sigma = 5.67e-8 # Constante de Stefan-Boltzmann
+epsilon = 0.8   # Emissividade da superfície
+T0 = 300        # Temperatura inicial (chute inicial)
+
+
+tol = 1e-6     # Tolerância para convergência
+max_iter = 100 # Número máximo de iterações
+
+
+def f(T): # Escrever problema como zero de função (f(T) = 0).
+    return h * A * (T - T_amb) + epsilon * sigma * A * (T**4 - T_amb**4) - P
+
+
+def df(T):
+    return h * A + 4 * epsilon * sigma * A * T**3
+
+
+# Implementação de Newton-Raphson:
+
+for k in range(1, max_iter + 1):
+
+    if k == 1:
+        Tk = T0       # Chute inicial
+    else:
+        Tk = Tk_novo  # Atualiza a temperatura para a próxima iteração
+    
+    Tk_novo = Tk - f(Tk) / df(Tk)
+
+
+    erro = abs(Tk_novo - Tk)
+
+    print(f"Iteração: {k}, T{k} = {Tk:.6f}, f(T{k}) = {f(Tk):.6f}, erro = {erro:.6f}")
+
+    if erro < tol:
+        print(f"Raiz encontrada: T = {Tk_novo:.6f} após {k} iterações.")
+        break

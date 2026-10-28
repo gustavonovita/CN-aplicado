@@ -1,0 +1,95 @@
+import numpy as np
+
+# --- Parte 1: Montagem do sistema linear ---
+n = 5
+
+# Matriz de coeficientes A e vetor do lado direito b (dados do arquivo CNA)[cite: 3]
+A_orig = np.array([
+    [ 6.0,  0.0, -1.0,  0.0,  0.0],
+    [-3.0,  3.0,  0.0,  0.0,  0.0],
+    [ 0.0, -1.0,  9.0,  0.0,  0.0],
+    [ 0.0, -1.0, -8.0, 11.0, -2.0],
+    [-3.0, -1.0,  0.0,  0.0,  4.0]
+])
+
+b_orig = np.array([50.0, 0.0, 160.0, 0.0, 0.0])
+
+# Cópias para modificação durante o algoritmo[cite: 3]
+A = A_orig.copy()
+b = b_orig.copy()
+
+print("--- Sistema Original ---")
+print("Matriz A:")
+print(A)
+print("Vetor b:", b)
+
+# Contadores de Operações de Ponto Flutuante (FLOPs)[cite: 3]
+cont_mult_div = 0
+cont_soma_sub = 0
+
+# --- Parte 3: Implementação da Eliminação Progressiva ---
+print("\n--- Iniciando Eliminação Progressiva ---")
+for k in range(n - 1):
+    # Verificação de pivô nulo ou muito próximo de zero[cite: 3]
+    if abs(A[k, k]) < 1e-12:
+        print(f"Erro: Pivô nulo detectado na etapa k={k}. Execução interrompida.")
+        break
+        
+    for i in range(k + 1, n):
+        # Fator multiplicador
+        fator = A[i, k] / A[k, k]
+        cont_mult_div += 1
+        
+        for j in range(k + 1, n):
+            A[i, j] = A[i, j] - fator * A[k, j]
+            cont_mult_div += 1
+            cont_soma_sub += 1
+            
+        b[i] = b[i] - fator * b[k]
+        cont_mult_div += 1
+        cont_soma_sub += 1
+        
+        A[i, k] = 0.0
+        
+    print(f"\nApós pivô k = {k}:")
+    print(np.round(A, 4))
+    print(np.round(b, 4))
+
+print("\n--- Matriz Triangular Superior Resultante ---")
+print(np.round(A, 4))
+
+# --- Parte 4: Substituição Retroativa ---
+c = np.zeros(n)
+
+# Calcula a última incógnita[cite: 3]
+c[n - 1] = b[n - 1] / A[n - 1, n - 1]
+cont_mult_div += 1
+
+# Calcula as demais incógnitas de baixo para cima[cite: 3]
+for i in range(n - 2, -1, -1):
+    soma = b[i]
+    for j in range(i + 1, n):
+        soma = soma - A[i, j] * c[j]
+        cont_mult_div += 1
+        cont_soma_sub += 1
+        
+    c[i] = soma / A[i, i]
+    cont_mult_div += 1
+
+print("\n--- Solução Encontrada (Concentrações) ---")
+for idx in range(n):
+    print(f"c{idx+1} = {c[idx]:.4f} mg/m³")
+
+print(f"\nCusto Computacional:")
+print(f"Multiplicações/Divisões: {cont_mult_div}")
+print(f"Somas/Subtrações: {cont_soma_sub}")
+print(f"Total de FLOPs: {cont_mult_div + cont_soma_sub}")
+
+# --- Parte 6: Verificação da solução ---
+# Cálculo do vetor residual r = A_orig * c - b_orig[cite: 3]
+r = np.dot(A_orig, c) - b_orig
+norma_inf_r = np.max(np.abs(r))
+
+print(f"\n--- Verificação ---")
+print(f"Vetor residual r: {r}")
+print(f"Norma infinito do resíduo (||r||_inf): {norma_inf_r:.4e}")
