@@ -1,0 +1,106 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def resolver_gauss_seidel(n, tol=1e-6, max_iter=100000):
+    """
+    Resolve a distribuição de temperatura em regime permanente de uma placa 2D
+    utilizando o método iterativo de Gauss-Seidel sobre uma malha de diferenças finitas[cite: 3].
+    """
+    # 1. Definir a malha e as condições de contorno[cite: 3]
+    # Cria uma matriz (n+2) x (n+2) inicializada integralmente em 20 ºC.
+    # Na convenção Python (0-based), os índices vão de 0 a n+1.
+    T = np.full((n + 2, n + 2), 20.0)
+    
+    # A borda inferior (j = 0 em Python) é fixada em 100 ºC para os nós internos (i = 1 até n)[cite: 3].
+    # Os quatro cantos permanecem a 20 ºC, como especificado[cite: 3].
+    T[1:n+1, 0] = 100.0
+    
+    # 2. Implementar a atualização iterativa[cite: 3]
+    iteracao = 0
+    erro = float('inf')
+    
+    while erro > tol and iteracao < max_iter:
+        erro = 0.0
+        
+        # Percorre apenas os nós internos da malha[cite: 3]
+        for j in range(1, n + 1):
+            for i in range(1, n + 1):
+                antigo = T[i, j]
+                
+                # A temperatura de cada nó interno é a média dos quatro vizinhos imediatos[cite: 3]
+                # Os valores atualizados já são usados nas próximas operações (Gauss-Seidel)[cite: 3].
+                T[i, j] = (T[i-1, j] + T[i+1, j] + T[i, j-1] + T[i, j+1]) / 4.0
+                
+                diferenca = abs(T[i, j] - antigo)
+                if diferenca > erro:
+                    erro = diferenca
+                    
+        iteracao += 1
+        
+    # Conferência adicional: Cálculo do resíduo máximo final[cite: 3]
+    max_res = 0.0
+    for j in range(1, n + 1):
+        for i in range(1, n + 1):
+            # ri,j = 4Ti,j - (Ti-1,j + Ti+1,j + Ti,j-1 + Ti,j+1)[cite: 3]
+            r = 4.0 * T[i, j] - (T[i-1, j] + T[i+1, j] + T[i, j-1] + T[i, j+1])
+            if abs(r) > max_res:
+                max_res = abs(r)
+                
+    return T, iteracao, erro, max_res
+
+# --- 5. Questões rápidas (Comentários no código) ---[cite: 3]
+# a) Por que as temperaturas das bordas não são atualizadas?
+# Resposta: Porque as bordas formam as condições de contorno fixas (Dirichlet) do problema físico, 
+# cujas temperaturas já são permanentemente mantidas e impostas pelo ambiente externo[cite: 3].
+#
+# b) O que diferencia a atualização de Gauss-Seidel da de Jacobi?
+# Resposta: Em Gauss-Seidel, o valor mais recente (já atualizado na iteração corrente) de um vizinho
+# é utilizado instantaneamente no cálculo do próximo nó, acelerando a convergência[cite: 3]. O método de 
+# Jacobi usaria apenas os valores da matriz da iteração inteira anterior[cite: 3].
+#
+# c) Como o número de iterações muda quando a malha é refinada?
+# Resposta: O número de iterações aumenta expressivamente. Com uma malha mais fina (maior n), o 
+# "passo espacial" fica menor, e a variação da condição de borda precisa de muito mais transferências 
+# vizinho a vizinho para se espalhar iterativamente por todo o miolo numérico da placa térmica.
+
+# --- Execução Principal ---
+if __name__ == "__main__":
+    # 4. Apresentar os resultados[cite: 3]
+    
+    # Execução para n = 5
+    print("--- Simulação para n = 5 ---")
+    T_5, iter_5, erro_5, res_5 = resolver_gauss_seidel(5)
+    
+    # O nó central para n=5 em Fortran é T(4,4). Em Python (0 a 6), o centro é no índice 3.
+    centro_idx_5 = 3
+    print(f"Iterações realizadas: {iter_5}")
+    print(f"Erro final (critério de parada): {erro_5:.4e}")
+    print(f"Temperatura do nó central T(4,4) [Python T[3,3]]: {T_5[centro_idx_5, centro_idx_5]:.4f} ºC")
+    print(f"Resíduo máximo no sistema linear (max |ri,j|): {res_5:.4e}")
+    
+    # Repetir para n = 10[cite: 3]
+    print("\n--- Simulação para n = 10 ---")
+    T_10, iter_10, erro_10, res_10 = resolver_gauss_seidel(10)
+    print(f"Iterações realizadas: {iter_10}")
+    print(f"Erro final: {erro_10:.4e}")
+    print(f"Resíduo máximo: {res_10:.4e}")
+    
+    # Repetir para n = 20[cite: 3]
+    print("\n--- Simulação para n = 20 ---")
+    T_20, iter_20, erro_20, res_20 = resolver_gauss_seidel(20)
+    print(f"Iterações realizadas: {iter_20}")
+    print(f"Erro final: {erro_20:.4e}")
+    print(f"Resíduo máximo: {res_20:.4e}")
+    
+    # 4.a) Apresentar a matriz de temperaturas de forma gráfica[cite: 3]
+    plt.figure(figsize=(7, 6))
+    # Rotaciona a matriz (transposta) e define a origem em baixo para mapear corretamente o y/j[cite: 3]
+    plt.imshow(T_20.T, origin='lower', cmap='jet', extent=[0, 1, 0, 1])
+    plt.colorbar(label='Temperatura (°C)')
+    plt.title('Distribuição de Temperatura na Placa (Gauss-Seidel, n=20)')
+    plt.xlabel('x')
+    plt.ylabel('y')
+    
+    # Salva e exibe aviso
+    plt.savefig('grafico_calor_placa.png')
+    print("\nO gráfico de preenchimento térmico foi salvo como 'grafico_calor_placa.png'.")
