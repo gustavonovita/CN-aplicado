@@ -1,0 +1,180 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# --- 1. Definir os dados físicos e econômicos (Tabela 1) ---[cite: 2]
+r1 = 0.040        # Raio externo da tubulação sem isolamento (m)[cite: 2]
+L = 20.0          # Comprimento da tubulação (m)[cite: 2]
+Ti = 180.0        # Temperatura na interface (ºC)[cite: 2]
+T_inf = 40.0      # Temperatura ambiente (ºC)[cite: 2]
+k = 0.045         # Condutividade térmica do isolante (W/(mK))[cite: 2]
+h = 12.0          # Coeficiente de convecção externa (W/(m²K))[cite: 2]
+t = 30000.0       # Tempo acumulado de operação (h)[cite: 2]
+pE_padrao = 0.70  # Preço da energia térmica reposta (R$/kWh)[cite: 2]
+cI = 9000.0       # Custo instalado do isolante (R$/m³)[cite: 2]
+
+# --- Parte 1: Funções Objetivo ---[cite: 2]
+def calcular_q_linha(e):
+    """
+    2. Calcula a taxa de perda de calor q'(e) em W/m[cite: 2].
+    """
+    r2 = r1 + e
+    if e == 0.0:
+        R_cond = 0.0
+    else:
+        R_cond = np.log(r2 / r1) / (2.0 * np.pi * k)
+        
+    R_conv = 1.0 / (2.0 * np.pi * h * r2)
+    q_linha = (Ti - T_inf) / (R_cond + R_conv)
+    return q_linha
+
+def calcular_custos(e, pE):
+    """
+    3. Retorna os componentes de custo (CE, CI) e o Custo Total C(e) em reais[cite: 2].
+    """
+    q_linha = calcular_q_linha(e)
+    # Custo de energia CE(e)[cite: 2]
+    CE = (pE * L * q_linha * t) / 1000.0
+    # Custo de instalação CI(e)[cite: 2]
+    CI = cI * np.pi * L * ((r1 + e)**2 - r1**2)
+    return CE, CI, CE + CI
+
+def funcao_objetivo(e, pE):
+    """
+    Retorna estritamente o Custo Total, servindo como nossa f(x) a minimizar[cite: 2].
+    """
+    return calcular_custos(e, pE)[2]
+
+# --- Parte 2: Método da Razão Áurea ---[cite: 2]
+def otimizar_razao_aurea(a, b, pE, tol=1e-6, max_iter=200):
+    tau = (np.sqrt(5) - 1.0) / 2.0  # ≈ 0.618034[cite: 2]
+    x1 = b - tau * (b - a)
+    x2 = a + tau * (b - a)
+    
+    f1 = funcao_objetivo(x1, pE)
+    f2 = funcao_objetivo(x2, pE)
+    avaliacoes = 2
+    
+    for k_iter in range(1, max_iter + 1):
+        if (b - a) < tol:
+            x_opt = (a + b) / 2.0
+            return x_opt, funcao_objetivo(x_opt, pE), k_iter, avaliacoes, "Convergiu"
+            
+        if f1 < f2:
+            b = x2
+            x2 = x1
+            f2 = f1
+            x1 = b - tau * (b - a)
+            f1 = funcao_objetivo(x1, pE)
+        else:
+            a = x1
+            x1 = x2
+            f1 = f2
+            x2 = a + tau * (b - a)
+            f2 = funcao_objetivo(x2, pE)
+        avaliacoes += 1
+        
+    x_opt = (a + b) / 2.0
+    return x_opt, funcao_objetivo(x_opt, pE), max_iter, avaliacoes, "Máx iterações"
+
+# --- Parte 3: Método de Interpolação Quadrática ---[cite: 2]
+def otimizar_interp_quadratica(x1, x2, x3, pE, tol=1e-6, max_iter=200):
+    f1 = funcao_objetivo(x1, pE)
+    f2 = funcao_objetivo(x2, pE)
+    f3 = funcao_objetivo(x3, pE)
+    avaliacoes = 3
+    
+    for k_iter in range(1, max_iter + 1):
+        if (x3 - x1) < tol:
+            return x2, f2, k_iter, avaliacoes, "Convergiu"
+            
+        # Diferenças divididas para os coeficientes A e B da parábola[cite: 2]
+        d1 = (f2 - f1) / (x2 - x1)
+        A = ((f3 - f2) / (x3 - x2) - d1) / (x3 - x1)
+        
+        # Proteção contra falhas no sistema quadrático[cite: 2]
+        if A <= 1e-12:
+            return x2, f2, k_iter, avaliacoes, "Proteção ativada (A <= 0)"
+            
+        B = d1 - A * (x1 + x2)
+        x_novo = -B / (2.0 * A)
+        
+        # Proteção de contorno e limites[cite: 2]
+        if x_novo <= x1 or x_novo >= x3 or np.abs(x_novo - x2) < 1e-10:
+            return x2, f2, k_iter, avaliacoes, "Proteção (Fora dos limites/Coincidente)"
+            
+        f_novo = funcao_objetivo(x_novo, pE)
+        avaliacoes += 1
+        
+        # 8. Regras de atualização dos 3 pontos[cite: 2]
+        if x_novo < x2:
+            if f_novo < f2:
+                x3, f3 = x2, f2
+                x2, f2 = x_novo, f_novo
+            else:
+                x1, f1 = x_novo, f_novo
+        else:
+            if f_novo < f2:
+                x1, f1 = x2, f2
+                x2, f2 = x_novo, f_novo
+            else:
+                x3, f3 = x_novo, f_novo
+                
+    return x2, f2, max_iter, avaliacoes, "Máx iterações"
+
+# --- Execução Principal ---
+if __name__ == "__main__":
+    print("=== 4. Explorar Numericamente a Função ===")
+    espessuras_teste = [0.0, 0.02, 0.04, 0.06, 0.08, 0.10, 0.12]
+    print(f"{'e (m)':<8} | {'CE (R$)':<12} | {'CI (R$)':<12} | {'C Total (R$)'}")
+    for e in espessuras_teste:
+        CE, CI, C_tot = calcular_custos(e, pE_padrao)
+        print(f"{e:<8.2f} | {CE:<12.2f} | {CI:<12.2f} | {C_tot:.2f}")
+        
+    # Gráfico de C(e)[cite: 2]
+    e_plot = np.linspace(0, 0.12, 100)
+    c_plot = [funcao_objetivo(e, pE_padrao) for e in e_plot]
+    plt.figure(figsize=(8, 5))
+    plt.plot(e_plot, c_plot, 'k-', label='Custo Total C(e)')
+    plt.title('Custo Total vs Espessura de Isolamento (pE = 0.70 R$/kWh)')
+    plt.xlabel('Espessura e (m)')
+    plt.ylabel('Custo Total (R$)')
+    plt.grid(True)
+    plt.legend()
+    plt.savefig('grafico_custo_e.png')
+    
+    print("\n=== 9. Comparação dos Métodos (Tolerância = 1e-6) ===")
+    a_opt, a_custo, a_iter, a_evals, a_status = otimizar_razao_aurea(0.0, 0.12, pE_padrao)
+    q_opt, q_custo, q_iter, q_evals, q_status = otimizar_interp_quadratica(0.04, 0.07, 0.11, pE_padrao)
+    
+    print(f"{'Resultado':<25} | {'Razão Áurea':<18} | {'Interpolação Quadrática'}")
+    print(f"{'-'*70}")
+    print(f"{'Espessura ótima (m)':<25} | {a_opt:<18.6f} | {q_opt:.6f}")
+    print(f"{'Custo mínimo (R$)':<25} | {a_custo:<18.2f} | {q_custo:.2f}")
+    print(f"{'Número de iterações':<25} | {a_iter:<18} | {q_iter}")
+    print(f"{'Avaliações de C(e)':<25} | {a_evals:<18} | {q_evals}")
+    print(f"{'Critério/Situação':<25} | {a_status:<18} | {q_status}")
+
+    print("\n=== 10. Investigação Paramétrica (Variação do pE) ===")
+    precos_E = [0.35, 0.70, 1.05, 1.40]
+    e_otimos_grafico = []
+    
+    print(f"{'pE (R$/kWh)':<12} | {'e_ótimo (m)':<12} | {'CE (R$)':<10} | {'CI (R$)':<10} | {'Custo Mínimo (R$)'}")
+    for pE in precos_E:
+        # Usa a Razão Áurea como motor robusto de busca
+        e_otimo, custo_min, _, _, _ = otimizar_razao_aurea(0.0, 0.12, pE)
+        CE, CI, _ = calcular_custos(e_otimo, pE)
+        e_otimos_grafico.append(e_otimo)
+        print(f"{pE:<12.2f} | {e_otimo:<12.4f} | {CE:<10.2f} | {CI:<10.2f} | {custo_min:.2f}")
+        
+    plt.figure(figsize=(8, 5))
+    plt.plot(precos_E, e_otimos_grafico, 'ro-')
+    plt.title('Influência do Preço da Energia na Espessura Ótima')
+    plt.xlabel('Preço da Energia pE (R$/kWh)')
+    plt.ylabel('Espessura Ótima do Isolamento (m)')
+    plt.grid(True)
+    plt.savefig('grafico_e_pE.png')
+    
+    print("\n=== 11. Verificação da Consistência Física ===")
+    rc = k / h
+    print(f"Raio crítico calculado: {rc:.5f} m ({rc*1000:.2f} mm)")
+    print(f"Raio da tubulação (r1): {r1:.5f} m ({r1*1000:.2f} mm)")
