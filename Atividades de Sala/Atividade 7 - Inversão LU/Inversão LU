@@ -1,0 +1,97 @@
+import numpy as np
+
+# --- Parte 2: Sistema com cinco graus de liberdade ---
+n = 5
+
+# Valores das rigidezes das molas em N/m[cite: 3]
+k0 = 1200.0
+k1 = 800.0
+k2 = 1500.0
+k3 = 1000.0
+k4 = 1800.0
+k5 = 900.0
+
+# 4. Construir a matriz K[cite: 3]
+K = np.array([
+    [k0 + k1, -k1, 0.0, 0.0, 0.0],
+    [-k1, k1 + k2, -k2, 0.0, 0.0],
+    [0.0, -k2, k2 + k3, -k3, 0.0],
+    [0.0, 0.0, -k3, k3 + k4, -k4],
+    [0.0, 0.0, 0.0, -k4, k4 + k5]
+])
+
+print("--- Matriz de Rigidez K ---")
+print(K)
+
+# --- Parte 3: Inversão matricial por decomposição LU ---
+# 5. Realizar a decomposição LU[cite: 3]
+L = np.eye(n)
+U = K.copy()
+
+for k in range(n - 1):
+    for i in range(k + 1, n):
+        fator = U[i, k] / U[k, k]
+        L[i, k] = fator
+        for j in range(k + 1, n):
+            U[i, j] = U[i, j] - fator * U[k, j]
+        U[i, k] = 0.0
+
+print("\n--- Matriz L ---")
+print(np.round(L, 4))
+print("\n--- Matriz U ---")
+print(np.round(U, 4))
+
+# Verificação numérica se LU ≈ K[cite: 3]
+erro_LU = np.max(np.abs(np.dot(L, U) - K))
+print(f"\nVerificação da fatoração (Erro max |LU - K|): {erro_LU:.4e}")
+
+# 6 a 9. Montar a matriz inversa coluna a coluna[cite: 3]
+C = np.zeros((n, n))
+
+for coluna in range(n):
+    # Constrói o vetor e_j da matriz identidade
+    e = np.zeros(n)
+    e[coluna] = 1.0
+    
+    # 7. Resolver o sistema triangular inferior (L * y = e) por substituição progressiva
+    y = np.zeros(n)
+    for i in range(n):
+        soma = e[i]
+        for j in range(i):
+            soma = soma - L[i, j] * y[j]
+        y[i] = soma / L[i, i]
+        
+    # 8. Resolver o sistema triangular superior (U * x = y) por substituição regressiva
+    x = np.zeros(n)
+    x[n - 1] = y[n - 1] / U[n - 1, n - 1]
+    for i in range(n - 2, -1, -1):
+        soma = y[i]
+        for j in range(i + 1, n):
+            soma = soma - U[i, j] * x[j]
+        x[i] = soma / U[i, i]
+        
+    # Armazena o vetor x na coluna correspondente da matriz C
+    for i in range(n):
+        C[i, coluna] = x[i]
+
+print("\n--- Matriz de Flexibilidade C (K^-1) ---")
+print(np.round(C, 8))
+
+# --- Parte 4: Verificação numérica e interpretação física ---
+# 10. Verificar a inversa (M = KC)[cite: 3]
+M = np.dot(K, C)
+I = np.eye(n)
+erromax = np.max(np.abs(M - I))
+print(f"\nErro máximo da identidade (|KC - I|): {erromax:.4e}")
+
+# 11. Verificar a simetria de C[cite: 3]
+errosim = np.max(np.abs(C - C.T))
+print(f"Erro de simetria (|C_ij - C_ji|): {errosim:.4e}")
+
+# 12. Utilizar a matriz de flexibilidade[cite: 3]
+F = np.array([0.0, 100.0, 0.0, -50.0, 25.0])
+u = np.dot(C, F)
+
+print("\n--- Deslocamentos nodais (u = CF) ---")
+for idx in range(n):
+    print(f"u{idx+1} = {u[idx]:.6e} m")
