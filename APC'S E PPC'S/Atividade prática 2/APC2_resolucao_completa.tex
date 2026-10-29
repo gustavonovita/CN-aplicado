@@ -1,0 +1,842 @@
+% ============================================================
+
+% APC2 - Cálculo Numérico Aplicado
+% Resolução analítica baseada na organização conceitual do APC1
+% ============================================================
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[brazil]{babel}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{geometry}
+\usepackage{siunitx}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{microtype}
+
+\geometry{margin=2.5cm}
+\sisetup{output-decimal-marker={,}}
+
+\title{\textbf{Atividade para Casa \#2 (APC2)}\\
+Cálculo Numérico Aplicado}
+\author{}
+\date{2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Introdução}
+
+A presente atividade tem como objetivo desenvolver a formulação analítica de um
+sistema massa--mola--amortecedor com múltiplos graus de liberdade e estabelecer
+a conexão entre o modelo físico e o polinômio característico que será utilizado
+posteriormente no Programa para Casa \#2 (PPC2).
+
+A organização da resolução segue a mesma lógica utilizada na APC1: parte-se da
+equação governante, propõe-se uma forma de solução, substitui-se essa solução na
+equação original, reorganizam-se os termos e, por fim, obtém-se a forma
+matemática que será utilizada na etapa computacional.
+
+A APC2 solicita, em particular, a obtenção do polinômio característico de ordem
+$2N$ associado ao sistema e sua organização na forma padrão para implementação
+computacional.
+
+\section{Formulação geral do sistema}
+
+Para um sistema com $N$ graus de liberdade, a equação do movimento fornecida no
+enunciado é
+
+\begin{equation}
+\mathbf{M}\frac{d^2\mathbf{x}}{dt^2}
++
+\mathbf{C}\frac{d\mathbf{x}}{dt}
++
+\mathbf{K}\mathbf{x}
+= \mathbf{0},
+\label{eq:movimento}
+\end{equation}
+
+em que:
+
+\begin{itemize}
+    \item $\mathbf{M}$ é a matriz de massa;
+    \item $\mathbf{C}$ é a matriz de amortecimento;
+    \item $\mathbf{K}$ é a matriz de rigidez;
+    \item $\mathbf{x}(t)$ é o vetor de deslocamentos.
+\end{itemize}
+
+Para $N$ graus de liberdade,
+
+\begin{equation}
+\mathbf{x}(t)=
+\begin{bmatrix}
+x_1(t) & x_2(t) & \cdots & x_N(t)
+\end{bmatrix}^{T}.
+\end{equation}
+
+As matrizes $\mathbf{M}$, $\mathbf{C}$ e $\mathbf{K}$ possuem dimensão
+$N\times N$.
+
+\section{Substituição da solução proposta}
+
+Assim como na APC1, adotamos uma solução exponencial. Para o problema com
+múltiplos graus de liberdade, o enunciado propõe
+
+\begin{equation}
+\mathbf{x}(t)=\boldsymbol{\phi}e^{\lambda t},
+\label{eq:solucao}
+\end{equation}
+
+em que $\boldsymbol{\phi}$ é um vetor constante associado à forma modal e
+$\lambda$ é um parâmetro a ser determinado.
+
+Derivando a Equação~\eqref{eq:solucao} uma vez em relação ao tempo,
+
+\begin{equation}
+\frac{d\mathbf{x}}{dt}
+=
+\lambda\boldsymbol{\phi}e^{\lambda t}.
+\label{eq:primeira}
+\end{equation}
+
+Derivando novamente,
+
+\begin{equation}
+\frac{d^2\mathbf{x}}{dt^2}
+=
+\lambda^2\boldsymbol{\phi}e^{\lambda t}.
+\label{eq:segunda}
+\end{equation}
+
+Substituindo as Equações~\eqref{eq:primeira} e
+\eqref{eq:segunda} na Equação~\eqref{eq:movimento}, obtemos
+
+\begin{equation}
+\mathbf{M}
+\left(\lambda^2\boldsymbol{\phi}e^{\lambda t}\right)
++
+\mathbf{C}
+\left(\lambda\boldsymbol{\phi}e^{\lambda t}\right)
++
+\mathbf{K}
+\left(\boldsymbol{\phi}e^{\lambda t}\right)
+=\mathbf{0}.
+\end{equation}
+
+Colocando o fator exponencial em evidência,
+
+\begin{equation}
+\left(
+\lambda^2\mathbf{M}
++
+\lambda\mathbf{C}
++
+\mathbf{K}
+\right)
+\boldsymbol{\phi}e^{\lambda t}
+=\mathbf{0}.
+\end{equation}
+
+Como
+
+\begin{equation}
+e^{\lambda t}\neq 0
+\end{equation}
+
+para qualquer valor finito de $\lambda$ e $t$, podemos dividir a equação por
+esse fator, resultando em
+
+\begin{equation}
+\boxed{
+\left(
+\lambda^2\mathbf{M}
++
+\lambda\mathbf{C}
++
+\mathbf{K}
+\right)\boldsymbol{\phi}
+=\mathbf{0}
+}.
+\label{eq:autovalores}
+\end{equation}
+
+Essa é a forma algébrica do problema de autovalores associado ao sistema.
+
+\section{Condição para existência de solução não trivial}
+
+A Equação~\eqref{eq:autovalores} é um sistema homogêneo. Uma solução sempre
+possível é
+
+\begin{equation}
+\boldsymbol{\phi}=\mathbf{0},
+\end{equation}
+
+porém essa solução não representa um movimento físico do sistema.
+
+Para existir uma solução não trivial,
+
+\begin{equation}
+\boldsymbol{\phi}\neq\mathbf{0},
+\end{equation}
+
+a matriz que multiplica $\boldsymbol{\phi}$ deve ser singular. Portanto,
+
+\begin{equation}
+\boxed{
+\det\left(
+\lambda^2\mathbf{M}
++
+\lambda\mathbf{C}
++
+\mathbf{K}
+\right)=0
+}.
+\label{eq:determinante}
+\end{equation}
+
+A Equação~\eqref{eq:determinante} é a equação característica do sistema.
+
+\section{Ordem do polinômio característico}
+
+As matrizes $\mathbf{M}$, $\mathbf{C}$ e $\mathbf{K}$ possuem dimensão
+$N\times N$. Cada elemento da matriz
+
+\begin{equation}
+\lambda^2\mathbf{M}
++\lambda\mathbf{C}
++\mathbf{K}
+\end{equation}
+
+é, no máximo, um polinômio de segundo grau em $\lambda$.
+
+Ao calcular o determinante de uma matriz $N\times N$, o maior grau possível
+resultante é
+
+\begin{equation}
+2N.
+\end{equation}
+
+Logo, o polinômio característico pode ser escrito como
+
+\begin{equation}
+\boxed{
+P(\lambda)
+=
+a_{2N}\lambda^{2N}
++a_{2N-1}\lambda^{2N-1}
++\cdots
++a_1\lambda+a_0
+=0
+}.
+\label{eq:polinomio-geral}
+\end{equation}
+
+Portanto, para um sistema com $N$ graus de liberdade, existem, em geral,
+$2N$ raízes, contando multiplicidades e raízes complexas.
+
+\section{Significado físico das raízes}
+
+As raízes do polinômio característico são os valores de $\lambda$ que
+determinam a resposta temporal do sistema.
+
+Considere uma raiz complexa escrita como
+
+\begin{equation}
+\lambda=\alpha+i\omega_d,
+\end{equation}
+
+em que $\alpha$ é a parte real e $\omega_d$ é a parte imaginária.
+
+A solução correspondente possui a forma
+
+\begin{equation}
+e^{\lambda t}
+=
+e^{(\alpha+i\omega_d)t}
+=
+e^{\alpha t}e^{i\omega_d t}.
+\end{equation}
+
+Assim, a parte real de $\lambda$ controla o comportamento da amplitude,
+enquanto a parte imaginária está relacionada à oscilação.
+
+\subsection*{Parte real negativa}
+
+Se
+
+\begin{equation}
+\operatorname{Re}(\lambda)<0,
+\end{equation}
+
+então
+
+\begin{equation}
+e^{\operatorname{Re}(\lambda)t}\rightarrow 0
+\qquad\text{quando}\qquad t\rightarrow\infty.
+\end{equation}
+
+Nesse caso, a resposta transitória decai com o tempo, caracterizando
+comportamento amortecido e estável para o modo correspondente.
+
+\subsection*{Parte real positiva}
+
+Se
+
+\begin{equation}
+\operatorname{Re}(\lambda)>0,
+\end{equation}
+
+a amplitude cresce exponencialmente com o tempo. Isso indica instabilidade
+dinâmica do modo correspondente.
+
+\subsection*{Parte real nula}
+
+Se
+
+\begin{equation}
+\operatorname{Re}(\lambda)=0,
+\end{equation}
+
+não existe decaimento exponencial da amplitude. Nesse caso, para uma raiz
+puramente imaginária, o sistema apresenta comportamento oscilatório sem
+amortecimento exponencial.
+
+\subsection*{Parte imaginária}
+
+Quando
+
+\begin{equation}
+\lambda=\alpha\pm i\omega_d,
+\end{equation}
+
+a presença de $\omega_d$ indica uma componente oscilatória. As raízes
+complexas aparecem em pares conjugados quando as matrizes e os coeficientes do
+problema são reais.
+
+\section{Escolha de um sistema numérico com dois graus de liberdade}
+
+Para cumprir as tarefas numéricas da APC2, será considerado um sistema com
+
+\begin{equation}
+N=2.
+\end{equation}
+
+Escolhemos os seguintes parâmetros físicos:
+
+\begin{table}[H]
+\centering
+\begin{tabular}{ccc}
+\toprule
+Parâmetro & Símbolo & Valor \\
+\midrule
+Massa 1 & $m_1$ & $2\,\mathrm{kg}$ \\
+Massa 2 & $m_2$ & $1\,\mathrm{kg}$ \\
+Amortecimento 1 & $c_1$ & $2\,\mathrm{N\,s/m}$ \\
+Amortecimento de acoplamento & $c_2$ & $1\,\mathrm{N\,s/m}$ \\
+Amortecimento 2 & $c_3$ & $3\,\mathrm{N\,s/m}$ \\
+Rigidez 1 & $k_1$ & $8\,\mathrm{N/m}$ \\
+Rigidez de acoplamento & $k_2$ & $4\,\mathrm{N/m}$ \\
+Rigidez 2 & $k_3$ & $5\,\mathrm{N/m}$ \\
+\bottomrule
+\end{tabular}
+\caption{Parâmetros adotados para o sistema de dois graus de liberdade.}
+\end{table}
+
+Considerando a configuração usual de duas massas acopladas, as matrizes são
+
+\begin{equation}
+\mathbf{M}
+=
+\begin{bmatrix}
+m_1 & 0\\
+0 & m_2
+\end{bmatrix}
+=
+\begin{bmatrix}
+2 & 0\\
+0 & 1
+\end{bmatrix}.
+\end{equation}
+
+Para o amortecimento,
+
+\begin{equation}
+\mathbf{C}
+=
+\begin{bmatrix}
+c_1+c_2 & -c_2\\
+-c_2 & c_2+c_3
+\end{bmatrix}.
+\end{equation}
+
+Substituindo os valores,
+
+\begin{equation}
+\mathbf{C}
+=
+\begin{bmatrix}
+2+1 & -1\\
+-1 & 1+3
+\end{bmatrix}
+=
+\boxed{
+\begin{bmatrix}
+3 & -1\\
+-1 & 4
+\end{bmatrix}
+}.
+\end{equation}
+
+Analogamente, para a rigidez,
+
+\begin{equation}
+\mathbf{K}
+=
+\begin{bmatrix}
+k_1+k_2 & -k_2\\
+-k_2 & k_2+k_3
+\end{bmatrix}.
+\end{equation}
+
+Portanto,
+
+\begin{equation}
+\mathbf{K}
+=
+\begin{bmatrix}
+8+4 & -4\\
+-4 & 4+5
+\end{bmatrix}
+=
+\boxed{
+\begin{bmatrix}
+12 & -4\\
+-4 & 9
+\end{bmatrix}
+}.
+\end{equation}
+
+\section{Construção explícita do sistema de equações}
+
+Para $N=2$,
+
+\begin{equation}
+\mathbf{x}(t)
+=
+\begin{bmatrix}
+x_1(t)\\
+x_2(t)
+\end{bmatrix}.
+\end{equation}
+
+A equação matricial é
+
+\begin{equation}
+\begin{bmatrix}
+2 & 0\\
+0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+\ddot{x}_1\\
+\ddot{x}_2
+\end{bmatrix}
++
+\begin{bmatrix}
+3 & -1\\
+-1 & 4
+\end{bmatrix}
+\begin{bmatrix}
+\dot{x}_1\\
+\dot{x}_2
+\end{bmatrix}
++
+\begin{bmatrix}
+12 & -4\\
+-4 & 9
+\end{bmatrix}
+\begin{bmatrix}
+x_1\\
+x_2
+\end{bmatrix}
+=
+\begin{bmatrix}
+0\\
+0
+\end{bmatrix}.
+\end{equation}
+
+Realizando as multiplicações matriciais, a primeira equação é
+
+\begin{equation}
+2\ddot{x}_1+3\dot{x}_1-\dot{x}_2+12x_1-4x_2=0.
+\label{eq:eq1}
+\end{equation}
+
+A segunda equação é
+
+\begin{equation}
+\ddot{x}_2-\dot{x}_1+4\dot{x}_2-4x_1+9x_2=0.
+\label{eq:eq2}
+\end{equation}
+
+Portanto, o sistema diferencial completo é
+
+\begin{equation}
+\boxed{
+\begin{cases}
+2\ddot{x}_1+3\dot{x}_1-\dot{x}_2+12x_1-4x_2=0,\\[2mm]
+\ddot{x}_2-\dot{x}_1+4\dot{x}_2-4x_1+9x_2=0.
+\end{cases}}
+\end{equation}
+
+\section{Obtenção do polinômio característico}
+
+Utilizando
+
+\begin{equation}
+\mathbf{x}(t)=\boldsymbol{\phi}e^{\lambda t},
+\qquad
+\boldsymbol{\phi}
+=
+\begin{bmatrix}
+\phi_1\\
+\phi_2
+\end{bmatrix},
+\end{equation}
+
+obtemos a matriz dinâmica
+
+\begin{equation}
+\mathbf{A}(\lambda)
+=
+\lambda^2\mathbf{M}
++\lambda\mathbf{C}
++\mathbf{K}.
+\end{equation}
+
+Substituindo as matrizes escolhidas,
+
+\begin{equation}
+\mathbf{A}(\lambda)
+=
+\lambda^2
+\begin{bmatrix}
+2 & 0\\
+0 & 1
+\end{bmatrix}
++
+\lambda
+\begin{bmatrix}
+3 & -1\\
+-1 & 4
+\end{bmatrix}
++
+\begin{bmatrix}
+12 & -4\\
+-4 & 9
+\end{bmatrix}.
+\end{equation}
+
+Efetuando a soma termo a termo,
+
+\begin{equation}
+\mathbf{A}(\lambda)
+=
+\begin{bmatrix}
+2\lambda^2+3\lambda+12
+&
+-\lambda-4\\
+-\lambda-4
+&
+\lambda^2+4\lambda+9
+\end{bmatrix}.
+\end{equation}
+
+A condição de existência de solução não trivial é
+
+\begin{equation}
+\det\left(\mathbf{A}(\lambda)\right)=0.
+\end{equation}
+
+Como a matriz possui dimensão $2\times2$,
+
+\begin{equation}
+\det
+\begin{bmatrix}
+a & b\\
+c & d
+\end{bmatrix}
+=ad-bc.
+\end{equation}
+
+Logo,
+
+\begin{align}
+0
+&=
+(2\lambda^2+3\lambda+12)
+(\lambda^2+4\lambda+9)
+-
+(-\lambda-4)(-\lambda-4).
+\end{align}
+
+Vamos desenvolver os produtos separadamente.
+
+Primeiro,
+
+\begin{align}
+(2\lambda^2+3\lambda+12)
+(\lambda^2+4\lambda+9)
+&=
+2\lambda^4
++8\lambda^3
++18\lambda^2\\
+&\quad
++3\lambda^3
++12\lambda^2
++27\lambda\\
+&\quad
++12\lambda^2
++48\lambda
++108.
+\end{align}
+
+Agrupando os termos semelhantes,
+
+\begin{equation}
+(2\lambda^2+3\lambda+12)
+(\lambda^2+4\lambda+9)
+=
+2\lambda^4
++11\lambda^3
++42\lambda^2
++75\lambda
++108.
+\end{equation}
+
+Agora,
+
+\begin{align}
+(-\lambda-4)(-\lambda-4)
+&=(\lambda+4)^2\\
+&=\lambda^2+8\lambda+16.
+\end{align}
+
+Substituindo os dois resultados no determinante,
+
+\begin{align}
+0
+&=
+2\lambda^4
++11\lambda^3
++42\lambda^2
++75\lambda
++108\\
+&\quad
+-\left(\lambda^2+8\lambda+16\right).
+\end{align}
+
+Finalmente,
+
+\begin{align}
+0
+&=
+2\lambda^4
++11\lambda^3
++(42-1)\lambda^2
++(75-8)\lambda
++(108-16).
+\end{align}
+
+Assim,
+
+\begin{equation}
+\boxed{
+2\lambda^4
++11\lambda^3
++41\lambda^2
++67\lambda
++92
+=0
+}.
+\label{eq:polinomio-final}
+\end{equation}
+
+\section{Organização na forma padrão}
+
+Comparando a Equação~\eqref{eq:polinomio-final} com
+
+\begin{equation}
+P(\lambda)
+=
+a_n\lambda^n
++a_{n-1}\lambda^{n-1}
++\cdots
++a_1\lambda
++a_0,
+\end{equation}
+
+temos
+
+\begin{equation}
+n=4
+\end{equation}
+
+e os coeficientes
+
+\begin{align}
+a_4 &= 2,\\
+a_3 &= 11,\\
+a_2 &= 41,\\
+a_1 &= 67,\\
+a_0 &= 92.
+\end{align}
+
+Portanto, o vetor de coeficientes que pode ser fornecido ao programa do
+PPC2 é
+
+\begin{equation}
+\boxed{
+\mathbf{a}
+=
+[2,\;11,\;41,\;67,\;92]
+}.
+\end{equation}
+
+O polinômio na forma solicitada é
+
+\begin{equation}
+\boxed{
+P(\lambda)
+=
+2\lambda^4
++11\lambda^3
++41\lambda^2
++67\lambda
++92
+}.
+\end{equation}
+
+\section{Raízes do polinômio e interpretação física}
+
+Para verificar o comportamento dinâmico do sistema, as raízes do polinômio
+podem ser obtidas numericamente. Para o polinômio obtido, as raízes são
+aproximadamente
+
+\begin{align}
+\lambda_1 &\approx -1{,}99793+2{,}40836i,\\
+\lambda_2 &\approx -1{,}99793-2{,}40836i,\\
+\lambda_3 &\approx -0{,}75207+2{,}03277i,\\
+\lambda_4 &\approx -0{,}75207-2{,}03277i.
+\end{align}
+
+As raízes aparecem em pares complexos conjugados, como esperado para um
+polinômio de coeficientes reais.
+
+Todas as raízes possuem parte real negativa:
+
+\begin{equation}
+\operatorname{Re}(\lambda_i)<0.
+\end{equation}
+
+Consequentemente, os fatores exponenciais associados possuem decaimento com
+o tempo. Os modos são, portanto, oscilatórios amortecidos.
+
+As partes imaginárias,
+
+\begin{equation}
+2{,}40836
+\qquad\text{e}\qquad
+2{,}03277,
+\end{equation}
+
+representam as frequências angulares amortecidas dos dois pares de modos, em
+$\mathrm{rad/s}$, enquanto as partes reais determinam a taxa de decaimento
+exponencial das amplitudes.
+
+É importante destacar que essa interpretação das raízes serve como conexão
+entre a formulação matemática da APC2 e o comportamento físico do sistema,
+enquanto a determinação das raízes pelo método de Bairstow será realizada na
+etapa computacional do PPC2.
+
+\section{Conclusão}
+
+A partir da equação matricial do sistema massa--mola--amortecedor,
+
+\begin{equation}
+\mathbf{M}\ddot{\mathbf{x}}
++
+\mathbf{C}\dot{\mathbf{x}}
++
+\mathbf{K}\mathbf{x}
+=0,
+\end{equation}
+
+foi adotada a solução exponencial
+
+\begin{equation}
+\mathbf{x}(t)=\boldsymbol{\phi}e^{\lambda t}.
+\end{equation}
+
+A substituição dessa solução levou ao problema algébrico
+
+\begin{equation}
+\left(
+\lambda^2\mathbf{M}
++\lambda\mathbf{C}
++\mathbf{K}
+\right)\boldsymbol{\phi}=0,
+\end{equation}
+
+e a condição para existência de solução não trivial resultou em
+
+\begin{equation}
+\det
+\left(
+\lambda^2\mathbf{M}
++\lambda\mathbf{C}
++\mathbf{K}
+\right)=0.
+\end{equation}
+
+Para o sistema escolhido com dois graus de liberdade, foi obtido um polinômio
+de quarta ordem,
+
+\begin{equation}
+\boxed{
+P(\lambda)
+=
+2\lambda^4
++11\lambda^3
++41\lambda^2
++67\lambda
++92
+}.
+\end{equation}
+
+Como $N=2$, verifica-se diretamente que a ordem do polinômio é
+
+\begin{equation}
+2N=4.
+\end{equation}
+
+O polinômio está organizado na forma padrão e seus coeficientes podem ser
+utilizados diretamente na implementação do método de Bairstow no PPC2. As
+raízes obtidas para o exemplo possuem partes reais negativas e partes
+imaginárias não nulas, indicando modos oscilatórios amortecidos para os
+parâmetros adotados.
+
+\section*{Referências}
+
+\begin{enumerate}
+    \item GONTIJO, R. G. \textit{Notas de aula do curso de Cálculo Numérico
+    Aplicado}. 2026.
+    \item CHAPRA, S. C.; CANALE, R. P. \textit{Métodos Numéricos para
+    Engenharia}. 5. ed. McGraw-Hill, 2008.
+\end{enumerate}
+
+\end{document}
